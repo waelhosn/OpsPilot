@@ -49,7 +49,7 @@ Optional environment variables:
 - `VAULT_ENABLED` = `false` on Vercel
 
 Backend Vercel wiring already exists:
-- `apps/api/index.py`
+- `apps/api/api/index.py`
 - `apps/api/vercel.json`
 
 ## 4) Configure Vercel Web project
@@ -58,7 +58,7 @@ Root directory:
 - `apps/web`
 
 Required environment variables:
-- `NEXT_PUBLIC_API_URL=https://<your-api-project>.vercel.app`
+- `NEXT_PUBLIC_API_URL=https://<your-api-project>.vercel.app/api`
 
 ## 5) Run database migrations
 
@@ -100,4 +100,3 @@ For assessment/demo traffic over one week, Vercel Hobby + Supabase Free is gener
 Potential limits to watch:
 - Serverless cold starts/timeouts on long requests
 - Supabase free-tier resource limits
-
