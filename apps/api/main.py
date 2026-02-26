@@ -45,8 +45,13 @@ def health() -> dict:
     return {"status": "ok", "service": "api"}
 
 
-@app.get("/me", response_model=MeResponse)
-def me_alias(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> MeResponse:
+@app.get("/api")
+def health_api_prefix() -> dict:
+    # Vercel setups often call the API behind an `/api` base path.
+    return {"status": "ok", "service": "api"}
+
+
+def _build_me_response(current_user: User, db: Session) -> MeResponse:
     memberships = (
         db.query(WorkspaceMember, Workspace)
         .join(Workspace, Workspace.id == WorkspaceMember.workspace_id)
@@ -60,7 +65,16 @@ def me_alias(current_user: User = Depends(get_current_user), db: Session = Depen
     return MeResponse(id=current_user.id, email=current_user.email, name=current_user.name, workspaces=items)
 
 
-app.include_router(auth.router)
-app.include_router(workspaces.router)
-app.include_router(inventory.router)
-app.include_router(events.router)
+@app.get("/me", response_model=MeResponse)
+def me_alias(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> MeResponse:
+    return _build_me_response(current_user, db)
+
+
+@app.get("/api/me", response_model=MeResponse)
+def me_alias_api_prefix(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> MeResponse:
+    return _build_me_response(current_user, db)
+
+
+for router in (auth.router, workspaces.router, inventory.router, events.router):
+    app.include_router(router)
+    app.include_router(router, prefix="/api")
