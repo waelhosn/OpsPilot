@@ -41,6 +41,9 @@ Required environment variables:
 - `DATABASE_URL` = Supabase Postgres URI
 - `JWT_SECRET` = strong random string
 - `CORS_ORIGINS` = comma-separated allowed origins (must include your web URL)
+- `BOOTSTRAP_ADMIN_EMAIL` = admin login email seeded by migration
+- `BOOTSTRAP_ADMIN_NAME` = admin display name seeded by migration
+- `BOOTSTRAP_ADMIN_PASSWORD` (or `BOOTSTRAP_ADMIN_PASSWORD_HASH`) = admin credentials seeded by migration
 
 Optional environment variables:
 - `AI_PROVIDER` = `mock` | `openai` | `anthropic`
@@ -67,6 +70,9 @@ Run migrations against the same `DATABASE_URL` used by the API:
 ```bash
 alembic upgrade head
 ```
+
+This migration seeds a bootstrap admin user and links it as `admin` in the default workspace.  
+All users created later through `/auth/register` are assigned `member`.
 
 If running locally against Supabase:
 

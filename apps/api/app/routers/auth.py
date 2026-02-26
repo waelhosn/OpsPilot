@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..auth import create_access_token, hash_password, verify_password
@@ -28,14 +27,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenRe
         db.add(workspace)
         db.flush()
 
-    admin_count = (
-        db.query(func.count(WorkspaceMember.id))
-        .filter(WorkspaceMember.workspace_id == workspace.id, WorkspaceMember.role == Role.admin)
-        .scalar()
-        or 0
-    )
-    role = Role.admin if admin_count == 0 else Role.member
-    db.add(WorkspaceMember(workspace_id=workspace.id, user_id=user.id, role=role))
+    db.add(WorkspaceMember(workspace_id=workspace.id, user_id=user.id, role=Role.member))
     db.commit()
 
     token = create_access_token(str(user.id))

@@ -10,7 +10,7 @@ This repo contains my solution for two scenarios from the assessment:
 - JWT auth (register/login)
 - RBAC with two roles: `admin`, `member`
 - Single-team UX (workspace exists in backend but is not shown in the UI)
-- First registered user becomes admin; everyone else is member by default
+- Bootstrap admin is created during migrations. all users registering later are members by default
 - FastAPI backend + SQLAlchemy + Alembic
 - Next.js frontend in `apps/web`
 - Optional encrypted local vault for secrets (for example `AI_API_KEY`)
@@ -73,6 +73,7 @@ Guardrails used for events:
 - I kept API and web separate inside one monorepo to keep boundaries clean and deployment simple.
 - AI actions are validated and executed deterministically on the backend (no direct free-form model execution against data).
 - RBAC is intentionally simple: one bootstrap admin, member by default after that.
+- Bootstrap admin is seeded by migration (`BOOTSTRAP_ADMIN_*` env vars), and registration does not auto-promote users.
 - Events UX is calendar-first; inventory UX is table-first.
 - Migrations are handled with Alembic, not runtime `create_all`.
 - Hosted setup targets Vercel + Supabase for easy reviewer access.
@@ -102,6 +103,9 @@ pip install -r requirements.txt
 cp .env.example .env
 # local quickstart:
 # DATABASE_URL=sqlite:///./app.db
+# optional bootstrap admin override before migration:
+# BOOTSTRAP_ADMIN_EMAIL=admin@opspilot.local
+# BOOTSTRAP_ADMIN_PASSWORD=Admin@123456
 alembic upgrade head
 ./.venv/bin/uvicorn apps.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -115,6 +119,9 @@ pip install -r requirements.txt
 copy .env.example .env
 # local quickstart:
 # DATABASE_URL=sqlite:///./app.db
+# optional bootstrap admin override before migration:
+# BOOTSTRAP_ADMIN_EMAIL=admin@opspilot.local
+# BOOTSTRAP_ADMIN_PASSWORD=Admin@123456
 alembic upgrade head
 uvicorn apps.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -201,7 +208,7 @@ VAULT_MASTER_KEY=<your-generated-key>
 
 ## Demo flow 
 
-1. Register first user (bootstrap admin).
+1. Login using bootstrap admin credentials seeded by migration.
 2. Inventory: add items, parse a receipt, commit parsed rows, ask copilot for low stock.
 3. Events: create/edit from calendar, generate description, check conflicts, send invite.
-4. Admin: add members (member is default role).
+4. Admin: add members (all registered users remain member by default).

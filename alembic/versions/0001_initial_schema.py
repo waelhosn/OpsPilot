@@ -5,9 +5,11 @@ Revises:
 Create Date: 2026-02-24 00:00:00
 """
 
+import os
 from typing import Sequence, Union
 
 from alembic import op
+from passlib.context import CryptContext
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
@@ -16,6 +18,7 @@ down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 role_enum = sa.Enum("admin", "member", name="role", native_enum=False)
 inventory_status_enum = sa.Enum(
@@ -24,6 +27,79 @@ inventory_status_enum = sa.Enum(
 event_attendance_enum = sa.Enum(
     "upcoming", "attending", "maybe", "declined", name="eventattendance", native_enum=False
 )
+
+
+def _seed_bootstrap_admin() -> None:
+    bind = op.get_bind()
+
+    workspace_name = os.getenv("DEFAULT_WORKSPACE_NAME", "OpsPilot Team").strip() or "OpsPilot Team"
+    admin_email = os.getenv("BOOTSTRAP_ADMIN_EMAIL", "admin@opspilot.local").strip().lower()
+    admin_name = os.getenv("BOOTSTRAP_ADMIN_NAME", "OpsPilot Admin").strip() or "OpsPilot Admin"
+    provided_hash = os.getenv("BOOTSTRAP_ADMIN_PASSWORD_HASH", "").strip()
+    if provided_hash:
+        admin_password_hash = provided_hash
+    else:
+        admin_password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD", "Admin@123456")
+        admin_password_hash = pwd_context.hash(admin_password)
+
+    workspace_id = bind.execute(
+        sa.text("SELECT id FROM workspaces WHERE name = :name ORDER BY id LIMIT 1"),
+        {"name": workspace_name},
+    ).scalar()
+    if workspace_id is None:
+        bind.execute(sa.text("INSERT INTO workspaces (name) VALUES (:name)"), {"name": workspace_name})
+        workspace_id = bind.execute(
+            sa.text("SELECT id FROM workspaces WHERE name = :name ORDER BY id LIMIT 1"),
+            {"name": workspace_name},
+        ).scalar()
+
+    user_id = bind.execute(
+        sa.text("SELECT id FROM users WHERE email = :email ORDER BY id LIMIT 1"),
+        {"email": admin_email},
+    ).scalar()
+    if user_id is None:
+        bind.execute(
+            sa.text(
+                """
+                INSERT INTO users (email, name, password_hash)
+                VALUES (:email, :name, :password_hash)
+                """
+            ),
+            {"email": admin_email, "name": admin_name, "password_hash": admin_password_hash},
+        )
+        user_id = bind.execute(
+            sa.text("SELECT id FROM users WHERE email = :email ORDER BY id LIMIT 1"),
+            {"email": admin_email},
+        ).scalar()
+
+    membership_id = bind.execute(
+        sa.text(
+            """
+            SELECT id
+            FROM workspace_members
+            WHERE workspace_id = :workspace_id AND user_id = :user_id
+            ORDER BY id
+            LIMIT 1
+            """
+        ),
+        {"workspace_id": workspace_id, "user_id": user_id},
+    ).scalar()
+
+    if membership_id is None:
+        bind.execute(
+            sa.text(
+                """
+                INSERT INTO workspace_members (workspace_id, user_id, role)
+                VALUES (:workspace_id, :user_id, :role)
+                """
+            ),
+            {"workspace_id": workspace_id, "user_id": user_id, "role": "admin"},
+        )
+    else:
+        bind.execute(
+            sa.text("UPDATE workspace_members SET role = :role WHERE id = :membership_id"),
+            {"role": "admin", "membership_id": membership_id},
+        )
 
 
 def upgrade() -> None:
@@ -56,6 +132,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_workspace_members_workspace_id", "workspace_members", ["workspace_id"], unique=False)
     op.create_index("ix_workspace_members_user_id", "workspace_members", ["user_id"], unique=False)
+    _seed_bootstrap_admin()
 
     op.create_table(
         "inventory_items",
