@@ -177,10 +177,6 @@ Optional provider-backed mode:
 
 If provider calls fail, the app falls back to deterministic behavior for demo stability.
 
-## Deployment
-
-Deployment details are in:
-- `DEPLOYMENT.md`
 
 ## Local secret vault
 

@@ -20,3 +20,5 @@ node_modules/
 *.tsbuildinfo
 apps/web/.next/
 apps/web/node_modules/
+DEPLOYMENT.md
+deployment.md
