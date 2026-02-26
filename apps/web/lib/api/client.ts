@@ -21,9 +21,12 @@ type RequestOptions = {
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE_URL_NORMALIZED = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
 
 function buildUrl(path: string, params?: RequestOptions["params"]): string {
-  const url = new URL(path, API_BASE_URL);
+  // Keep API_BASE_URL path segments (e.g. /api on Vercel) even when callers pass "/auth/login".
+  const normalizedPath = path.startsWith("/") ? path.slice(1) : path;
+  const url = new URL(normalizedPath, API_BASE_URL_NORMALIZED);
   if (!params) return url.toString();
 
   for (const [key, value] of Object.entries(params)) {
