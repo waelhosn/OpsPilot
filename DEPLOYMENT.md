@@ -61,7 +61,7 @@ Root directory:
 - `apps/web`
 
 Required environment variables:
-- `NEXT_PUBLIC_API_URL=https://<your-api-project>.vercel.app/api`
+- `NEXT_PUBLIC_API_URL=https://<your-api-project>.vercel.app/api` (must be the API project domain, not the web domain)
 
 ## 5) Run database migrations
 

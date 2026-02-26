@@ -10,17 +10,17 @@ This repo contains my solution for two scenarios from the assessment:
 - JWT auth (register/login)
 - RBAC with two roles: `admin`, `member`
 - Single-team UX (workspace exists in backend but is not shown in the UI)
-- Bootstrap admin is created during migrations. all users registering later are members by default
+- Bootstrap admin is created during migrations. All users registering later are members by default
 - FastAPI backend + SQLAlchemy + Alembic
 - Next.js frontend in `apps/web`
 - Optional encrypted local vault for secrets (for example `AI_API_KEY`)
 - AI run logging (`ai_runs`)
 
 ### Inventory (V4)
-- Add/edit/delete items
+- Add/edit/delete items (name, vendor, category, quantity, unit, threshold, status)
 - Status tracking: `in_stock`, `low_stock`, `ordered`, `discontinued`
 - Search
-- AI import flow for receipt/invoice content: parse -> review -> commit
+- AI import flow for receipt/invoice text content (pasted text or txt/csv/html): parse -> review -> commit
 - Duplicate suggestions during import (`merge`, `create_new`, `auto`)
 - Duplicate-safe commit (normalized matches merge quantity)
 - Inventory copilot with guardrails and deterministic execution
@@ -38,7 +38,7 @@ This repo contains my solution for two scenarios from the assessment:
 ## AI features and guardrails
 
 ### Inventory AI
-- Receipt/invoice import: parses uploaded content into structured rows, lets the user review/edit, then commits.
+- Receipt/invoice import: parses text content into structured rows (including vendor where available), lets the user review/edit, then commits.
 - Auto-normalization and duplicate handling: suggests merge behavior and safely merges known duplicates on commit.
 - Copilot for inventory questions: supports summary and lookup questions over inventory data.
 
@@ -88,6 +88,13 @@ Guardrails used for events:
 - Database URL handling is normalized for hosted Postgres providers (for example Supabase).
 - Local secrets can be encrypted with the built-in vault helper; hosted secrets should be set in platform env vars.
 
+## Demo credentials
+
+If migrations were run with default bootstrap admin values:
+
+- Email: `admin@aspire.com`
+- Password: `AspirePilot`
+
 ## Local run
 
 ### Prerequisites
@@ -104,8 +111,8 @@ cp .env.example .env
 # local quickstart:
 # DATABASE_URL=sqlite:///./app.db
 # optional bootstrap admin override before migration:
-# BOOTSTRAP_ADMIN_EMAIL=admin@opspilot.local
-# BOOTSTRAP_ADMIN_PASSWORD=Admin@123456
+# BOOTSTRAP_ADMIN_EMAIL=admin@aspire.com
+# BOOTSTRAP_ADMIN_PASSWORD=AspirePilot
 alembic upgrade head
 ./.venv/bin/uvicorn apps.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -120,8 +127,8 @@ copy .env.example .env
 # local quickstart:
 # DATABASE_URL=sqlite:///./app.db
 # optional bootstrap admin override before migration:
-# BOOTSTRAP_ADMIN_EMAIL=admin@opspilot.local
-# BOOTSTRAP_ADMIN_PASSWORD=Admin@123456
+# BOOTSTRAP_ADMIN_EMAIL=admin@aspire.com
+# BOOTSTRAP_ADMIN_PASSWORD=AspirePilot
 alembic upgrade head
 uvicorn apps.api.main:app --reload --host 0.0.0.0 --port 8000
 ```

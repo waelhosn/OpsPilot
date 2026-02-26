@@ -68,6 +68,7 @@ class InventoryItem(Base):
     workspace_id: Mapped[int] = mapped_column(ForeignKey("workspaces.id"), index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     normalized_name: Mapped[str] = mapped_column(String(255), index=True)
+    vendor: Mapped[str | None] = mapped_column(String(255), nullable=True)
     category: Mapped[str] = mapped_column(String(128), default="general")
     quantity: Mapped[float] = mapped_column(Float, default=0)
     unit: Mapped[str] = mapped_column(String(50), default="units")

@@ -70,6 +70,7 @@ class MeResponse(BaseModel):
 
 class InventoryItemBase(BaseModel):
     name: str
+    vendor: str | None = None
     category: str | None = None
     quantity: float = 0
     unit: str | None = None
@@ -83,6 +84,7 @@ class InventoryItemCreate(InventoryItemBase):
 
 class InventoryItemUpdate(BaseModel):
     name: str | None = None
+    vendor: str | None = None
     category: str | None = None
     quantity: float | None = None
     unit: str | None = None
@@ -95,6 +97,7 @@ class InventoryItemOut(BaseModel):
     workspace_id: int
     name: str
     normalized_name: str
+    vendor: str | None
     category: str
     quantity: float
     unit: str
@@ -108,6 +111,7 @@ class ReceiptItem(BaseModel):
     name: str
     quantity: float = 1
     unit: str = "units"
+    vendor: str | None = None
     category: str | None = None
     price: float | None = None
 
@@ -176,6 +180,7 @@ class InventoryPlannerMetric(str, enum.Enum):
 class InventoryPlannerGroupBy(str, enum.Enum):
     none = "none"
     category = "category"
+    vendor = "vendor"
     status = "status"
     unit = "unit"
     item = "item"
@@ -188,6 +193,7 @@ class InventoryPlannerSortDirection(str, enum.Enum):
 
 class InventoryPlannerFilterField(str, enum.Enum):
     name = "name"
+    vendor = "vendor"
     category = "category"
     status = "status"
     unit = "unit"
@@ -236,9 +242,9 @@ class InventoryCopilotPlan(BaseModel):
                 raise ValueError("invalid scalar metric for group_by='none'")
 
         if self.metric == InventoryPlannerMetric.rows:
-            allowed_sort = {"name", "quantity", "category", "status", "unit"}
+            allowed_sort = {"name", "quantity", "vendor", "category", "status", "unit"}
             if self.sort_by not in allowed_sort:
-                raise ValueError("rows metric supports sort_by in name, quantity, category, status, unit")
+                raise ValueError("rows metric supports sort_by in name, quantity, vendor, category, status, unit")
         elif self.group_by == InventoryPlannerGroupBy.none:
             if self.sort_by != "metric":
                 raise ValueError("scalar metrics require sort_by='metric'")

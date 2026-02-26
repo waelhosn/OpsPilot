@@ -21,7 +21,25 @@ export function formatDateTime(value: string | null | undefined): string {
 
 export function normalizeErrorDetail(detail: unknown): string {
   if (!detail) return "Request failed";
-  if (Array.isArray(detail)) return detail.map((part) => String(part)).join("; ");
+  if (Array.isArray(detail)) {
+    return detail
+      .map((part) => {
+        if (typeof part === "string") return part;
+        if (part && typeof part === "object") {
+          const record = part as { msg?: unknown; loc?: unknown };
+          const msg = typeof record.msg === "string" ? record.msg : JSON.stringify(part);
+          const loc = Array.isArray(record.loc)
+            ? record.loc
+                .map((segment) => String(segment))
+                .filter((segment) => segment !== "body")
+                .join(".")
+            : "";
+          return loc ? `${loc}: ${msg}` : msg;
+        }
+        return String(part);
+      })
+      .join("; ");
+  }
   if (typeof detail === "object") return JSON.stringify(detail);
   return String(detail);
 }

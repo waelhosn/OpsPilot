@@ -18,6 +18,7 @@ export default function RegisterPage(): JSX.Element {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     if (!isHydrating && token) {
@@ -39,6 +40,7 @@ export default function RegisterPage(): JSX.Element {
   async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setIsSubmitting(true);
+    setFormError("");
     try {
       const response = await apiRequest<TokenResponse>("/auth/register", {
         method: "POST",
@@ -53,6 +55,7 @@ export default function RegisterPage(): JSX.Element {
       router.replace("/app");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Registration failed";
+      setFormError(message);
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -73,7 +76,10 @@ export default function RegisterPage(): JSX.Element {
               className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
               required
               value={name}
-              onChange={(event) => setName(event.target.value)}
+              onChange={(event) => {
+                setName(event.target.value);
+                if (formError) setFormError("");
+              }}
             />
           </label>
 
@@ -84,7 +90,10 @@ export default function RegisterPage(): JSX.Element {
               type="email"
               required
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                if (formError) setFormError("");
+              }}
               autoComplete="email"
             />
           </label>
@@ -97,10 +106,17 @@ export default function RegisterPage(): JSX.Element {
               required
               minLength={8}
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                if (formError) setFormError("");
+              }}
               autoComplete="new-password"
             />
           </label>
+
+          {formError ? (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</p>
+          ) : null}
 
           <button
             type="submit"

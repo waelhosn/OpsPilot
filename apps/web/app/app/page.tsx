@@ -68,6 +68,7 @@ type EditableImportRow = {
   name: string;
   quantity: number;
   unit: string;
+  vendor: string;
   category: string;
   price?: number | null;
   duplicate_action: DuplicateAction;
@@ -284,6 +285,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
     name: "",
     quantity: 1,
     unit: "units",
+    vendor: "",
     category: "",
     low_stock_threshold: 1,
     status: "in_stock" as InventoryStatus
@@ -328,6 +330,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
         name: "",
         quantity: 1,
         unit: "units",
+        vendor: "",
         category: "",
         low_stock_threshold: 1,
         status: "in_stock"
@@ -348,6 +351,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
           name: item.name,
           quantity: item.quantity,
           unit: item.unit,
+          vendor: item.vendor ?? null,
           category: item.category,
           low_stock_threshold: item.low_stock_threshold,
           status: item.status
@@ -409,6 +413,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
           name: item.name,
           quantity: Number(item.quantity ?? 1),
           unit: item.unit ?? "units",
+          vendor: item.vendor ?? parsed.vendor ?? "",
           category: item.category ?? "",
           price: item.price ?? null,
           duplicate_action: (suggestion?.recommended_action ?? "auto") as DuplicateAction,
@@ -445,6 +450,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
           name: row.name,
           quantity: Number(row.quantity),
           unit: row.unit,
+          vendor: row.vendor || null,
           category: row.category || null,
           price: row.price ?? null,
           duplicate_action: row.duplicate_action,
@@ -503,6 +509,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
     return items.filter((item) => {
       return (
         item.name.toLowerCase().includes(term) ||
+        (item.vendor ?? "").toLowerCase().includes(term) ||
         item.category.toLowerCase().includes(term) ||
         item.unit.toLowerCase().includes(term) ||
         item.status.toLowerCase().includes(term)
@@ -568,6 +575,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
       item.name !== draft.name ||
       Number(item.quantity) !== Number(draft.quantity) ||
       item.unit !== draft.unit ||
+      (item.vendor ?? "") !== (draft.vendor ?? "") ||
       item.category !== draft.category ||
       Number(item.low_stock_threshold) !== Number(draft.low_stock_threshold) ||
       item.status !== draft.status
@@ -666,7 +674,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
               <Sparkles className="h-4 w-4 text-brand-700" />
               <h4 className="text-sm font-semibold text-slate-900">AI Import</h4>
             </div>
-            <p className="mt-1 text-xs text-slate-500">Parse pasted text or uploaded files, review extracted rows, then commit to inventory.</p>
+            <p className="mt-1 text-xs text-slate-500">Parse pasted text or text-based files (txt/csv/html), review extracted rows, then commit to inventory.</p>
 
             <div className="mt-3 space-y-2">
               <textarea
@@ -730,6 +738,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
                         <th className="px-3 py-2">Name</th>
                         <th className="px-3 py-2">Qty</th>
                         <th className="px-3 py-2">Unit</th>
+                        <th className="px-3 py-2">Vendor</th>
                         <th className="px-3 py-2">Category</th>
                         <th className="px-3 py-2">Duplicate action</th>
                         <th className="px-3 py-2">Suggestions</th>
@@ -766,6 +775,13 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
                             </td>
                             <td className="px-2 py-2">
                               <input
+                                className="w-36 rounded-lg border border-slate-300 px-2 py-1"
+                                value={row.vendor}
+                                onChange={(event) => handleEditableRowChange(index, { vendor: event.target.value })}
+                              />
+                            </td>
+                            <td className="px-2 py-2">
+                              <input
                                 className="w-24 rounded-lg border border-slate-300 px-2 py-1"
                                 value={row.category}
                                 onChange={(event) => handleEditableRowChange(index, { category: event.target.value })}
@@ -793,7 +809,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
                       })}
                       {editableRows.length === 0 ? (
                         <tr>
-                          <td className="px-3 py-3 text-slate-500" colSpan={6}>
+                          <td className="px-3 py-3 text-slate-500" colSpan={7}>
                             No parsed rows.
                           </td>
                         </tr>
@@ -882,7 +898,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
             <p className="mt-1 text-sm text-slate-500">Click Edit to modify a row, then Save.</p>
           </div>
           <form
-            className="grid w-full gap-2 sm:w-auto sm:grid-cols-8"
+            className="grid w-full gap-2 sm:w-auto sm:grid-cols-9"
             onSubmit={(event) => {
               event.preventDefault();
               if (!newItem.name.trim()) return;
@@ -915,6 +931,14 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
                 className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                 value={newItem.unit}
                 onChange={(event) => setNewItem((prev) => ({ ...prev, unit: event.target.value }))}
+              />
+            </label>
+            <label className="text-xs font-medium text-slate-600">
+              Vendor
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                value={newItem.vendor}
+                onChange={(event) => setNewItem((prev) => ({ ...prev, vendor: event.target.value }))}
               />
             </label>
             <label className="text-xs font-medium text-slate-600">
@@ -973,7 +997,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
               className="w-full rounded-xl border border-slate-300 py-2 pl-9 pr-3 text-sm"
               value={tableSearch}
               onChange={(event) => setTableSearch(event.target.value)}
-              placeholder="Search item, category, unit, status..."
+              placeholder="Search item, vendor, category, unit, status..."
             />
           </div>
         </label>
@@ -983,6 +1007,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-3 py-2">Item</th>
+                <th className="px-3 py-2">Vendor</th>
                 <th className="px-3 py-2">Category</th>
                 <th className="px-3 py-2">Quantity</th>
                 <th className="px-3 py-2">Unit</th>
@@ -1010,6 +1035,17 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
                         />
                       ) : (
                         <span className="text-slate-800">{item.name}</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-2">
+                      {isEditing ? (
+                        <input
+                          className="w-36 rounded-lg border border-slate-300 px-2 py-1"
+                          value={draft.vendor ?? ""}
+                          onChange={(event) => updateItemDraft(item.id, { vendor: event.target.value })}
+                        />
+                      ) : (
+                        <span className="text-slate-600">{item.vendor || "-"}</span>
                       )}
                     </td>
                     <td className="px-2 py-2">
@@ -1123,7 +1159,7 @@ function InventoryModule({ token, workspaceId }: ModuleProps): JSX.Element {
               })}
               {filteredItems.length === 0 ? (
                 <tr>
-                  <td className="px-3 py-4 text-slate-500" colSpan={7}>
+                  <td className="px-3 py-4 text-slate-500" colSpan={8}>
                     No inventory items found.
                   </td>
                 </tr>

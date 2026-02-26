@@ -17,6 +17,7 @@ export default function LoginPage(): JSX.Element {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     if (!isHydrating && token) {
@@ -38,6 +39,7 @@ export default function LoginPage(): JSX.Element {
   async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setIsSubmitting(true);
+    setFormError("");
     try {
       const response = await apiRequest<TokenResponse>("/auth/login", {
         method: "POST",
@@ -51,6 +53,7 @@ export default function LoginPage(): JSX.Element {
       router.replace("/app");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login failed";
+      setFormError(message);
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -72,7 +75,10 @@ export default function LoginPage(): JSX.Element {
               type="email"
               required
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                if (formError) setFormError("");
+              }}
               autoComplete="email"
             />
           </label>
@@ -84,10 +90,17 @@ export default function LoginPage(): JSX.Element {
               type="password"
               required
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                if (formError) setFormError("");
+              }}
               autoComplete="current-password"
             />
           </label>
+
+          {formError ? (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</p>
+          ) : null}
 
           <button
             type="submit"

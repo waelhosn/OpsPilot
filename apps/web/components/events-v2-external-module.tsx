@@ -408,30 +408,30 @@ export function EventsV2ExternalModule({ token, workspaceId, me }: EventsV2Exter
             toolbarActions={
               <div className="flex items-center gap-2">
                 <button
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                  className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                   onClick={() => eventsQuery.refetch()}
                   disabled={eventsQuery.isFetching}
                 >
                   {eventsQuery.isFetching ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <RefreshCcw className="h-3.5 w-3.5" />
+                    <RefreshCcw className="h-4 w-4" />
                   )}
                   Refresh
                 </button>
                 <button
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   onClick={() => setIsDraftDialogOpen(true)}
                 >
-                  <Sparkles className="h-3.5 w-3.5" />
+                  <Sparkles className="h-4 w-4" />
                   Create with AI
                 </button>
                 <button
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                  className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                   onClick={() => setIsEventOpsDialogOpen(true)}
                   disabled={events.length === 0}
                 >
-                  <CalendarClock className="h-3.5 w-3.5" />
+                  <CalendarClock className="h-4 w-4" />
                   Event Ops
                 </button>
               </div>

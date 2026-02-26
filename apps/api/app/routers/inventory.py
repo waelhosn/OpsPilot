@@ -2,7 +2,7 @@ from difflib import SequenceMatcher
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from pydantic import ValidationError
-from sqlalchemy import String, case, func
+from sqlalchemy import String, case, func, or_
 from sqlalchemy.orm import Session
 
 from ..deps import get_current_user, get_db, get_workspace_id, require_membership
@@ -43,12 +43,15 @@ def _resolved_status(payload_status: InventoryStatus | None, quantity: float, th
 def _merge_into_existing_item(
     existing: InventoryItem,
     quantity_delta: float,
+    vendor: str | None,
     category: str | None,
     unit: str | None,
     low_stock_threshold: float | None,
     payload_status: InventoryStatus | None,
 ) -> None:
     existing.quantity += quantity_delta
+    if vendor:
+        existing.vendor = vendor
     if category:
         existing.category = category
     if unit:
@@ -78,6 +81,13 @@ def _normalize_category_label(category: str | None) -> str | None:
     if category is None:
         return None
     cleaned = category.strip().lower()
+    return cleaned or None
+
+
+def _normalize_vendor_label(vendor: str | None) -> str | None:
+    if vendor is None:
+        return None
+    cleaned = vendor.strip()
     return cleaned or None
 
 
@@ -136,7 +146,14 @@ def list_items(
     q = db.query(InventoryItem).filter(InventoryItem.workspace_id == workspace_id)
     if query:
         like = f"%{query.lower()}%"
-        q = q.filter(func.lower(InventoryItem.name).like(like))
+        q = q.filter(
+            or_(
+                func.lower(InventoryItem.name).like(like),
+                func.lower(func.coalesce(InventoryItem.vendor, "")).like(like),
+                func.lower(func.coalesce(InventoryItem.category, "")).like(like),
+                func.lower(func.coalesce(InventoryItem.unit, "")).like(like),
+            )
+        )
     if category:
         q = q.filter(InventoryItem.category == category)
     if status_filter:
@@ -154,6 +171,7 @@ def create_item(
     require_membership(db, current_user.id, workspace_id)
 
     normalized_name = ai_service.normalize_item_name(payload.name)
+    vendor = _normalize_vendor_label(payload.vendor)
     category = _normalize_category_label(payload.category) or ai_service.suggest_category(payload.name)
     unit = payload.unit or "units"
 
@@ -166,6 +184,7 @@ def create_item(
         _merge_into_existing_item(
             existing=existing,
             quantity_delta=payload.quantity,
+            vendor=vendor,
             category=category,
             unit=unit,
             low_stock_threshold=payload.low_stock_threshold,
@@ -181,6 +200,7 @@ def create_item(
         workspace_id=workspace_id,
         name=payload.name,
         normalized_name=normalized_name,
+        vendor=vendor,
         category=category,
         quantity=payload.quantity,
         unit=unit,
@@ -218,6 +238,8 @@ def update_item(
             item.category = ai_service.suggest_category(payload.name)
     if payload.category is not None:
         item.category = _normalize_category_label(payload.category) or item.category
+    if payload.vendor is not None:
+        item.vendor = _normalize_vendor_label(payload.vendor)
 
     if payload.quantity is not None or payload.low_stock_threshold is not None or payload.status is not None:
         item.status = _resolved_status(item.status, item.quantity, item.low_stock_threshold)
@@ -341,6 +363,7 @@ def commit_import(
             )
 
         normalized_name = ai_service.normalize_item_name(entry.name)
+        vendor = _normalize_vendor_label(entry.vendor)
         category = _normalize_category_label(entry.category) or ai_service.suggest_category(entry.name)
         unit = entry.unit or "units"
 
@@ -378,6 +401,7 @@ def commit_import(
             _merge_into_existing_item(
                 existing=merge_target,
                 quantity_delta=entry.quantity,
+                vendor=vendor,
                 category=category,
                 unit=unit,
                 low_stock_threshold=None,
@@ -391,6 +415,7 @@ def commit_import(
                 _merge_into_existing_item(
                     existing=exact_existing,
                     quantity_delta=entry.quantity,
+                    vendor=vendor,
                     category=category,
                     unit=unit,
                     low_stock_threshold=None,
@@ -405,6 +430,7 @@ def commit_import(
             workspace_id=workspace_id,
             name=entry.name,
             normalized_name=normalized_name,
+            vendor=vendor,
             category=category,
             quantity=entry.quantity,
             unit=unit,
@@ -448,17 +474,23 @@ def copilot(
             value = plan_filter.value
             field = plan_filter.field
 
-            if field in {InventoryPlannerFilterField.name, InventoryPlannerFilterField.category, InventoryPlannerFilterField.unit}:
+            if field in {
+                InventoryPlannerFilterField.name,
+                InventoryPlannerFilterField.vendor,
+                InventoryPlannerFilterField.category,
+                InventoryPlannerFilterField.unit,
+            }:
                 column = {
                     InventoryPlannerFilterField.name: InventoryItem.name,
+                    InventoryPlannerFilterField.vendor: InventoryItem.vendor,
                     InventoryPlannerFilterField.category: InventoryItem.category,
                     InventoryPlannerFilterField.unit: InventoryItem.unit,
                 }[field]
                 value_str = str(value).strip().lower()
                 if op == InventoryPlannerFilterOperator.eq:
-                    query_builder = query_builder.filter(func.lower(column) == value_str)
+                    query_builder = query_builder.filter(func.lower(func.coalesce(column, "")) == value_str)
                 elif op == InventoryPlannerFilterOperator.contains:
-                    query_builder = query_builder.filter(func.lower(column).like(f"%{value_str}%"))
+                    query_builder = query_builder.filter(func.lower(func.coalesce(column, "")).like(f"%{value_str}%"))
                 else:
                     raise HTTPException(status_code=400, detail=f"Unsupported operator '{op}' for field '{field}'")
                 continue
@@ -510,6 +542,7 @@ def copilot(
                 sort_columns = {
                     "name": InventoryItem.name,
                     "quantity": InventoryItem.quantity,
+                    "vendor": InventoryItem.vendor,
                     "category": InventoryItem.category,
                     "status": InventoryItem.status,
                     "unit": InventoryItem.unit,
@@ -529,6 +562,7 @@ def copilot(
                         {
                             "id": row.id,
                             "name": row.name,
+                            "vendor": row.vendor,
                             "category": row.category,
                             "quantity": row.quantity,
                             "unit": row.unit,
@@ -560,6 +594,7 @@ def copilot(
 
         group_column = {
             InventoryPlannerGroupBy.category: func.lower(func.trim(InventoryItem.category)),
+            InventoryPlannerGroupBy.vendor: func.lower(func.trim(func.coalesce(InventoryItem.vendor, ""))),
             InventoryPlannerGroupBy.status: func.lower(func.trim(func.cast(InventoryItem.status, String))),
             InventoryPlannerGroupBy.unit: func.lower(func.trim(InventoryItem.unit)),
             InventoryPlannerGroupBy.item: func.lower(func.trim(InventoryItem.name)),

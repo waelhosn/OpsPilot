@@ -37,6 +37,7 @@ export interface InventoryItemOut {
   workspace_id: number;
   name: string;
   normalized_name: string;
+  vendor?: string | null;
   category: string;
   quantity: number;
   unit: string;
@@ -48,6 +49,7 @@ export interface ReceiptItem {
   name: string;
   quantity: number;
   unit: string;
+  vendor?: string | null;
   category?: string | null;
   price?: number | null;
 }

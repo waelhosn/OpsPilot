@@ -33,13 +33,13 @@ def _seed_bootstrap_admin() -> None:
     bind = op.get_bind()
 
     workspace_name = os.getenv("DEFAULT_WORKSPACE_NAME", "OpsPilot Team").strip() or "OpsPilot Team"
-    admin_email = os.getenv("BOOTSTRAP_ADMIN_EMAIL", "admin@opspilot.local").strip().lower()
-    admin_name = os.getenv("BOOTSTRAP_ADMIN_NAME", "OpsPilot Admin").strip() or "OpsPilot Admin"
+    admin_email = os.getenv("BOOTSTRAP_ADMIN_EMAIL", "admin@aspire.com").strip().lower()
+    admin_name = os.getenv("BOOTSTRAP_ADMIN_NAME", "Aspire Admin").strip() or "Aspire Admin"
     provided_hash = os.getenv("BOOTSTRAP_ADMIN_PASSWORD_HASH", "").strip()
     if provided_hash:
         admin_password_hash = provided_hash
     else:
-        admin_password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD", "Admin@123456")
+        admin_password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD", "AspirePilot")
         admin_password_hash = pwd_context.hash(admin_password)
 
     workspace_id = bind.execute(
