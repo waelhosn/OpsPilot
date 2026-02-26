@@ -116,7 +116,7 @@ def upgrade() -> None:
         sa.Column("feature", sa.String(length=100), nullable=False),
         sa.Column("prompt_version", sa.String(length=50), nullable=False, server_default="v1"),
         sa.Column("model", sa.String(length=100), nullable=False, server_default="mock"),
-        sa.Column("success", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+        sa.Column("success", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("latency_ms", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("error", sa.Text(), nullable=False, server_default=""),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("CURRENT_TIMESTAMP")),
