@@ -2,12 +2,22 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from .app.config import get_settings
-from .app.deps import get_current_user, get_db
-from .app.database import init_db
-from .app.models import User, Workspace, WorkspaceMember
-from .app.routers import auth, events, inventory, workspaces
-from .app.schemas import MeResponse, MembershipOut
+try:
+    # Local package import path (e.g., `uvicorn apps.api.main:app`)
+    from .app.config import get_settings
+    from .app.deps import get_current_user, get_db
+    from .app.database import init_db
+    from .app.models import User, Workspace, WorkspaceMember
+    from .app.routers import auth, events, inventory, workspaces
+    from .app.schemas import MeResponse, MembershipOut
+except ImportError:
+    # Vercel project-root import path (e.g., `from main import app`)
+    from app.config import get_settings
+    from app.deps import get_current_user, get_db
+    from app.database import init_db
+    from app.models import User, Workspace, WorkspaceMember
+    from app.routers import auth, events, inventory, workspaces
+    from app.schemas import MeResponse, MembershipOut
 
 app = FastAPI(title="AI Engineering Assessment API", version="1.0.0")
 settings = get_settings()
