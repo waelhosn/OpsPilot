@@ -43,11 +43,11 @@ def _resolved_status(payload_status: InventoryStatus | None, quantity: float, th
 def _merge_into_existing_item(
     existing: InventoryItem,
     quantity_delta: float,
-    vendor: str | None,
     category: str | None,
     unit: str | None,
     low_stock_threshold: float | None,
     payload_status: InventoryStatus | None,
+    vendor: str | None = None,
 ) -> None:
     existing.quantity += quantity_delta
     if vendor:

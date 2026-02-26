@@ -910,7 +910,7 @@ class AIService:
             "For requests like 'what item has the lowest stock', use metric='rows', group_by='none', "
             "sort_by='quantity', sort_direction='asc', limit=1. "
             "For requests like 'category with the lowest stock', use metric='low_stock_ratio', "
-            "group_by='category', sort_by='metric', sort_direction='asc'. "
+            "group_by='category', sort_by='metric', sort_direction='desc'. "
             "For ambiguous ranking terms like 'lowest stock', prefer item-level quantity ranking unless category is explicitly requested.\n"
             f"Allowed values: {json.dumps(schema_summary)}\n"
             f"User query JSON string: {json.dumps(query)}"
@@ -960,7 +960,7 @@ class AIService:
                     "metric": InventoryPlannerMetric.low_stock_ratio,
                     "group_by": InventoryPlannerGroupBy.category,
                     "sort_by": "metric",
-                    "sort_direction": InventoryPlannerSortDirection.asc,
+                    "sort_direction": InventoryPlannerSortDirection.desc,
                     "limit": 1 if single_result else min(plan.limit, 5),
                 }
             )
@@ -985,7 +985,7 @@ class AIService:
             metric = InventoryPlannerMetric.low_stock_ratio
             group_by = InventoryPlannerGroupBy.category
             sort_by = "metric"
-            sort_direction = InventoryPlannerSortDirection.asc
+            sort_direction = InventoryPlannerSortDirection.desc
             limit = 5
         elif "low stock" in lowered and "category" in lowered:
             metric = InventoryPlannerMetric.count_low_stock
@@ -1078,7 +1078,7 @@ class AIService:
             top_metric = top.get("metric")
             if "lowest" in query.lower() and "stock" in query.lower():
                 if metric == InventoryPlannerMetric.low_stock_ratio.value and group_by == InventoryPlannerGroupBy.category.value:
-                    return f"Category with lowest low-stock pressure: {group_value} ({float(top_metric) * 100:.1f}% low-stock ratio)."
+                    return f"Category with highest low-stock pressure: {group_value} ({float(top_metric) * 100:.1f}% low-stock ratio)."
                 if metric == InventoryPlannerMetric.count_low_stock.value and group_by == InventoryPlannerGroupBy.category.value:
                     return f"Category with most low-stock items: {group_value} ({top_metric})."
             preview = ", ".join(
